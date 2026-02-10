@@ -6,48 +6,17 @@ import {
   ActivityIndicator,
   Dimensions,
   FlatList,
+  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { BarChart } from "react-native-chart-kit";
 import { db } from "../firebaseConfig";
 
-import { BarChart } from "react-native-chart-kit";
-
 export default function MonthlyReport() {
-  const exportToPDF = async () => {
-    const html = `
-    <html>
-      <body style="font-family: Arial; padding: 20px;">
-        <h2>Monthly Report</h2>
-        <h3>${new Date(selectedYear, selectedMonth).toLocaleString("default", {
-          month: "long",
-          year: "numeric",
-        })}</h3>
-
-        <p><strong>Membership Revenue:</strong> ₹${membershipRevenue}</p>
-        <p><strong>Registration Revenue:</strong> ₹${registrationRevenue}</p>
-        <p><strong>Total Revenue:</strong> ₹${membershipRevenue + registrationRevenue}</p>
-
-        <hr />
-
-        <p><strong>Cash:</strong> ₹${cashTotal}</p>
-        <p><strong>UPI:</strong> ₹${upiTotal}</p>
-        <p><strong>Online:</strong> ₹${onlineTotal}</p>
-
-        <hr />
-
-        <p><strong>Paid Members:</strong> ${paidMembers.length}</p>
-        <p><strong>Unpaid Members:</strong> ${unpaidMembers.length}</p>
-      </body>
-    </html>
-  `;
-
-    const { uri } = await Print.printToFileAsync({ html });
-
-    await Sharing.shareAsync(uri);
-  };
+  const screenWidth = Dimensions.get("window").width;
 
   const [membershipRevenue, setMembershipRevenue] = useState(0);
   const [registrationRevenue, setRegistrationRevenue] = useState(0);
@@ -57,325 +26,338 @@ export default function MonthlyReport() {
   const [paidMembers, setPaidMembers] = useState<any[]>([]);
   const [unpaidMembers, setUnpaidMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const screenWidth = Dimensions.get("window").width;
 
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
+  const exportToPDF = async () => {
+    const html = `
+      <html>
+        <body style="font-family: Arial; padding: 20px;">
+          <h2>Monthly Report</h2>
+          <h3>${new Date(selectedYear, selectedMonth).toLocaleString(
+            "default",
+            {
+              month: "long",
+              year: "numeric",
+            }
+          )}</h3>
+
+          <p><b>Membership:</b> ₹${membershipRevenue}</p>
+          <p><b>Registration:</b> ₹${registrationRevenue}</p>
+          <p><b>Total:</b> ₹${membershipRevenue + registrationRevenue}</p>
+
+          <hr />
+          <p><b>Cash:</b> ₹${cashTotal}</p>
+          <p><b>UPI:</b> ₹${upiTotal}</p>
+          <p><b>Online:</b> ₹${onlineTotal}</p>
+
+          <hr />
+          <p><b>Paid Members:</b> ${paidMembers.length}</p>
+          <p><b>Unpaid Members:</b> ${unpaidMembers.length}</p>
+        </body>
+      </html>
+    `;
+
+    const { uri } = await Print.printToFileAsync({ html });
+    await Sharing.shareAsync(uri);
+  };
+
   useEffect(() => {
-    const unsubscribePayments = onSnapshot(
-      collection(db, "payments"),
-      (snapshot) => {
-        let membership = 0;
-        let registration = 0;
-        let cash = 0;
-        let upi = 0;
-        let online = 0;
+    const unsubPayments = onSnapshot(collection(db, "payments"), (snapshot) => {
+      let membership = 0;
+      let registration = 0;
+      let cash = 0;
+      let upi = 0;
+      let online = 0;
 
-        snapshot.forEach((doc) => {
-          const data = doc.data();
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        if (!data.paidOn?.seconds) return;
 
-          if (data.paidOn?.seconds) {
-            const paidDate = new Date(data.paidOn.seconds * 1000);
+        const d = new Date(data.paidOn.seconds * 1000);
+        if (
+          d.getMonth() === selectedMonth &&
+          d.getFullYear() === selectedYear
+        ) {
+          if (data.type === "membership") membership += Number(data.amount);
+          if (data.type === "registration") registration += Number(data.amount);
+          if (data.method === "cash") cash += Number(data.amount);
+          if (data.method === "upi") upi += Number(data.amount);
+          if (data.method === "online") online += Number(data.amount);
+        }
+      });
 
-            if (
-              paidDate.getMonth() === selectedMonth &&
-              paidDate.getFullYear() === selectedYear
-            ) {
-              if (data.type === "membership") {
-                membership += Number(data.amount);
-              }
+      setMembershipRevenue(membership);
+      setRegistrationRevenue(registration);
+      setCashTotal(cash);
+      setUpiTotal(upi);
+      setOnlineTotal(online);
+    });
 
-              if (data.type === "registration") {
-                registration += Number(data.amount);
-              }
+    const unsubMembers = onSnapshot(collection(db, "members"), (snapshot) => {
+      const paid: any[] = [];
+      const unpaid: any[] = [];
+      const today = new Date();
 
-              if (data.method === "cash") cash += Number(data.amount);
-              if (data.method === "upi") upi += Number(data.amount);
-              if (data.method === "online") online += Number(data.amount);
-            }
-          }
-        });
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        if (data.nextDueDate?.seconds) {
+          const due = new Date(data.nextDueDate.seconds * 1000);
+          today <= due
+            ? paid.push({ id: doc.id, ...data })
+            : unpaid.push({ id: doc.id, ...data });
+        } else {
+          unpaid.push({ id: doc.id, ...data });
+        }
+      });
 
-        setMembershipRevenue(membership);
-        setRegistrationRevenue(registration);
-        setCashTotal(cash);
-        setUpiTotal(upi);
-        setOnlineTotal(online);
-      },
-    );
-
-    const unsubscribeMembers = onSnapshot(
-      collection(db, "members"),
-      (snapshot) => {
-        const paid: any[] = [];
-        const unpaid: any[] = [];
-
-        const today = new Date();
-
-        snapshot.forEach((doc) => {
-          const data = doc.data();
-
-          if (data.nextDueDate?.seconds) {
-            const dueDate = new Date(data.nextDueDate.seconds * 1000);
-
-            if (today <= dueDate) {
-              paid.push({ id: doc.id, ...data });
-            } else {
-              unpaid.push({ id: doc.id, ...data });
-            }
-          } else {
-            unpaid.push({ id: doc.id, ...data });
-          }
-        });
-
-        setPaidMembers(paid);
-        setUnpaidMembers(unpaid);
-        setLoading(false);
-      },
-    );
+      setPaidMembers(paid);
+      setUnpaidMembers(unpaid);
+      setLoading(false);
+    });
 
     return () => {
-      unsubscribePayments();
-      unsubscribeMembers();
+      unsubPayments();
+      unsubMembers();
     };
   }, [selectedMonth, selectedYear]);
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#2196F3" />
-      </View>
+      <SafeAreaView style={styles.center}>
+        <ActivityIndicator size="large" color="#2563eb" />
+      </SafeAreaView>
     );
   }
 
   const totalRevenue = membershipRevenue + registrationRevenue;
 
   return (
-    <View style={styles.container}>
-      {/* Month Navigation */}
-      <View style={styles.monthContainer}>
-        <TouchableOpacity
-          style={styles.monthButton}
-          onPress={() => {
-            let newMonth = selectedMonth - 1;
-            let newYear = selectedYear;
-
-            if (newMonth < 0) {
-              newMonth = 11;
-              newYear -= 1;
-            }
-
-            setSelectedMonth(newMonth);
-            setSelectedYear(newYear);
-          }}
-        >
-          <Text style={styles.monthText}>Previous</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.monthLabel}>
-          {new Date(selectedYear, selectedMonth).toLocaleString("default", {
-            month: "long",
-            year: "numeric",
-          })}
-        </Text>
-
-        <TouchableOpacity
-          style={styles.monthButton}
-          onPress={() => {
-            let newMonth = selectedMonth + 1;
-            let newYear = selectedYear;
-
-            if (newMonth > 11) {
-              newMonth = 0;
-              newYear += 1;
-            }
-
-            setSelectedMonth(newMonth);
-            setSelectedYear(newYear);
-          }}
-        >
-          <Text style={styles.monthText}>Next</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Revenue Breakdown */}
-      <Text style={styles.header}>
-        Membership Revenue: ₹{membershipRevenue}
-      </Text>
-
-      <Text style={styles.header}>
-        Registration Revenue: ₹{registrationRevenue}
-      </Text>
-
-      <Text style={styles.header}>Total Revenue: ₹{totalRevenue}</Text>
-      <View style={styles.chartContainer}>
-        <Text style={styles.chartTitle}>Revenue Breakdown</Text>
-
-        <BarChart
-          data={{
-            labels: ["Membership", "Registration"],
-            datasets: [
-              {
-                data: [membershipRevenue, registrationRevenue],
-              },
-            ],
-          }}
-          width={screenWidth - 30}
-          height={220}
-          yAxisLabel="₹"
-          yAxisSuffix=""
-          chartConfig={{
-            backgroundColor: "#1c1c1c",
-            backgroundGradientFrom: "#1c1c1c",
-            backgroundGradientTo: "#1c1c1c",
-            decimalPlaces: 0,
-            color: (opacity = 1) => `rgba(33, 150, 243, ${opacity})`,
-            labelColor: () => "#fff",
-          }}
-          style={{
-            borderRadius: 16,
-          }}
-        />
-      </View>
-      <View style={{ marginTop: 20 }}>
-        <TouchableOpacity
-          style={[styles.exportButton, { backgroundColor: "#4CAF50" }]}
-          onPress={exportToPDF}
-        >
-          <Text style={styles.exportText}>Download PDF</Text>
-        </TouchableOpacity>
-      </View>
-      <View style={styles.chartContainer}>
-        <Text style={styles.chartTitle}>Payment Mode Distribution</Text>
-
-        <BarChart
-          data={{
-            labels: ["Cash", "UPI", "Online"],
-            datasets: [
-              {
-                data: [cashTotal, upiTotal, onlineTotal],
-              },
-            ],
-          }}
-          width={screenWidth - 30}
-          height={220}
-          yAxisLabel="₹"
-          yAxisSuffix=""
-          chartConfig={{
-            backgroundColor: "#1c1c1c",
-            backgroundGradientFrom: "#1c1c1c",
-            backgroundGradientTo: "#1c1c1c",
-            decimalPlaces: 0,
-            color: (opacity = 1) => `rgba(76, 175, 80, ${opacity})`,
-            labelColor: () => "#fff",
-          }}
-          style={{
-            borderRadius: 16,
-          }}
-        />
-      </View>
-
-      <View style={styles.breakdown}>
-        <Text style={styles.summary}>Cash: ₹{cashTotal}</Text>
-        <Text style={styles.summary}>UPI: ₹{upiTotal}</Text>
-        <Text style={styles.summary}>Online: ₹{onlineTotal}</Text>
-      </View>
-
-      <Text style={styles.summary}>Paid Members: {paidMembers.length}</Text>
-      <Text style={styles.summary}>Unpaid Members: {unpaidMembers.length}</Text>
-
-      <Text style={styles.subHeader}>Unpaid Members</Text>
-
+    <SafeAreaView style={styles.container}>
       <FlatList
         data={unpaidMembers}
         keyExtractor={(item) => item.id}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 40 }}
+        ListHeaderComponent={
+          <>
+            {/* Month Selector */}
+            <View style={styles.monthRow}>
+              <TouchableOpacity
+                style={styles.monthBtn}
+                onPress={() => {
+                  let m = selectedMonth - 1;
+                  let y = selectedYear;
+                  if (m < 0) {
+                    m = 11;
+                    y--;
+                  }
+                  setSelectedMonth(m);
+                  setSelectedYear(y);
+                }}
+              >
+                <Text style={styles.monthBtnText}>Previous</Text>
+              </TouchableOpacity>
+
+              <Text style={styles.monthLabel}>
+                {new Date(selectedYear, selectedMonth).toLocaleString(
+                  "default",
+                  {
+                    month: "long",
+                    year: "numeric",
+                  }
+                )}
+              </Text>
+
+              <TouchableOpacity
+                style={styles.monthBtn}
+                onPress={() => {
+                  let m = selectedMonth + 1;
+                  let y = selectedYear;
+                  if (m > 11) {
+                    m = 0;
+                    y++;
+                  }
+                  setSelectedMonth(m);
+                  setSelectedYear(y);
+                }}
+              >
+                <Text style={styles.monthBtnText}>Next</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Summary */}
+            <View style={styles.card}>
+              <Text style={styles.text}>Membership: ₹{membershipRevenue}</Text>
+              <Text style={styles.text}>
+                Registration: ₹{registrationRevenue}
+              </Text>
+              <Text style={styles.total}>Total Revenue: ₹{totalRevenue}</Text>
+            </View>
+
+            {/* Revenue Chart */}
+            <View style={styles.chartCard}>
+              <Text style={styles.chartTitle}>Revenue Breakdown</Text>
+              <BarChart
+                data={{
+                  labels: ["Membership", "Registration"],
+                  datasets: [
+                    { data: [membershipRevenue, registrationRevenue] },
+                  ],
+                }}
+                width={screenWidth - 32}
+                height={220}
+                yAxisLabel="₹"
+                yAxisSuffix="" // ✅ REQUIRED
+                chartConfig={chartBlue}
+                style={{ borderRadius: 12 }}
+              />
+            </View>
+
+            <TouchableOpacity style={styles.exportButton} onPress={exportToPDF}>
+              <Text style={styles.exportText}>Download PDF</Text>
+            </TouchableOpacity>
+
+            {/* Payment Mode Chart */}
+            <View style={styles.chartCard}>
+              <Text style={styles.chartTitle}>Payment Mode</Text>
+              <BarChart
+                data={{
+                  labels: ["Cash", "UPI", "Online"],
+                  datasets: [{ data: [cashTotal, upiTotal, onlineTotal] }],
+                }}
+                width={screenWidth - 32}
+                height={220}
+                yAxisLabel="₹"
+                yAxisSuffix="" // ✅ REQUIRED
+                chartConfig={chartGreen}
+                style={{ borderRadius: 12 }}
+              />
+            </View>
+
+            <Text style={styles.subHeader}>Unpaid Members</Text>
+          </>
+        }
         renderItem={({ item }) => (
-          <View style={styles.card}>
-            <Text style={[styles.name, { color: "red" }]}>{item.name}</Text>
+          <View style={styles.memberCard}>
+            <Text style={styles.name}>{item.name}</Text>
             <Text style={styles.text}>
               Membership Fee: ₹{item.membershipFee}
             </Text>
           </View>
         )}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
+const chartBlue = {
+  backgroundGradientFrom: "#ffffff",
+  backgroundGradientTo: "#ffffff",
+  decimalPlaces: 0,
+  color: (o = 1) => `rgba(37, 99, 235, ${o})`,
+  labelColor: () => "#374151",
+};
+
+const chartGreen = {
+  backgroundGradientFrom: "#ffffff",
+  backgroundGradientTo: "#ffffff",
+  decimalPlaces: 0,
+  color: (o = 1) => `rgba(22, 163, 74, ${o})`,
+  labelColor: () => "#374151",
+};
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#000", padding: 15 },
+  container: {
+    flex: 1,
+    backgroundColor: "#f3f4f6",
+    padding: 16,
+    paddingTop: 60,
+  },
   center: {
     flex: 1,
+    backgroundColor: "#f3f4f6",
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#000",
   },
-  monthContainer: {
+  monthRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 15,
+    marginBottom: 16,
   },
-  monthButton: {
-    backgroundColor: "#333",
-    padding: 8,
-    borderRadius: 6,
+  monthBtn: {
+    backgroundColor: "#dbeafe",
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 10,
   },
-  monthText: { color: "#fff" },
-  monthLabel: { color: "#fff", fontSize: 16 },
-  header: {
-    color: "#fff",
+  monthBtnText: {
+    color: "#1e3a8a",
+    fontWeight: "600",
+  },
+  monthLabel: {
     fontSize: 16,
-    marginBottom: 5,
-  },
-  breakdown: {
-    marginBottom: 10,
-  },
-  summary: {
-    color: "#fff",
-    fontSize: 14,
-    marginBottom: 3,
-  },
-  subHeader: {
-    color: "#2196F3",
-    fontSize: 16,
-    marginTop: 10,
-    marginBottom: 5,
+    fontWeight: "700",
+    color: "#1f2937",
   },
   card: {
-    backgroundColor: "#1c1c1c",
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  name: {
-    fontSize: 16,
-    fontWeight: "bold",
+    backgroundColor: "#ffffff",
+    padding: 16,
+    borderRadius: 14,
+    marginBottom: 16,
   },
   text: {
-    color: "#ccc",
+    color: "#374151",
+    fontSize: 14,
   },
-  chartContainer: {
-    marginTop: 20,
+  total: {
+    marginTop: 6,
+    color: "#2563eb",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  chartCard: {
+    backgroundColor: "#ffffff",
+    padding: 16,
+    borderRadius: 14,
+    marginBottom: 16,
     alignItems: "center",
   },
-
   chartTitle: {
-    color: "#fff",
     fontSize: 16,
+    fontWeight: "700",
+    color: "#1f2937",
     marginBottom: 10,
   },
   exportButton: {
-    backgroundColor: "#2196F3",
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 10,
+    backgroundColor: "#16a34a",
+    padding: 14,
+    borderRadius: 12,
     alignItems: "center",
+    marginBottom: 16,
   },
-
   exportText: {
-    color: "#fff",
-    fontWeight: "bold",
+    color: "#ffffff",
+    fontWeight: "700",
+    fontSize: 16,
+  },
+  subHeader: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#2563eb",
+    marginBottom: 10,
+  },
+  memberCard: {
+    backgroundColor: "#ffffff",
+    padding: 14,
+    borderRadius: 12,
+    marginBottom: 10,
+  },
+  name: {
+    color: "#dc2626",
+    fontWeight: "700",
+    fontSize: 16,
   },
 });

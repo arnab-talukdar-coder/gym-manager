@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  SafeAreaView,
   StyleSheet,
   Text,
   View,
@@ -26,7 +27,7 @@ export default function PaymentHistory() {
 
     const q = query(
       collection(db, "payments"),
-      where("memberId", "==", memberId),
+      where("memberId", "==", memberId)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -40,30 +41,18 @@ export default function PaymentHistory() {
 
       snapshot.forEach((doc) => {
         const data = doc.data();
+        const amount = Number(data.amount || 0);
 
         list.push({ id: doc.id, ...data });
 
-        const amount = Number(data.amount || 0);
-
-        if (data.type === "membership") {
-          membership += amount;
-        }
-
-        if (data.type === "registration") {
-          registration += amount;
-        }
-
+        if (data.type === "membership") membership += amount;
+        if (data.type === "registration") registration += amount;
         if (data.method === "cash") cash += amount;
         if (data.method === "upi") upi += amount;
         if (data.method === "online") online += amount;
       });
 
-      // Sort newest first
-      list.sort((a, b) => {
-        const aDate = a.paidOn?.seconds || 0;
-        const bDate = b.paidOn?.seconds || 0;
-        return bDate - aDate;
-      });
+      list.sort((a, b) => (b.paidOn?.seconds || 0) - (a.paidOn?.seconds || 0));
 
       setPayments(list);
       setMembershipTotal(membership);
@@ -79,21 +68,22 @@ export default function PaymentHistory() {
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#2196F3" />
-      </View>
+      <SafeAreaView style={styles.center}>
+        <ActivityIndicator size="large" color="#2563eb" />
+      </SafeAreaView>
     );
   }
 
   const totalPaid = membershipTotal + registrationTotal;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {payments.length === 0 ? (
-        <Text style={{ color: "#fff" }}>No Payments Found</Text>
+        <Text style={styles.empty}>No Payments Found</Text>
       ) : (
         <>
-          {/* Summary Section */}
+          {/* SUMMARY */}
+          <Text style={styles.title}>Payment History</Text>
           <View style={styles.summaryCard}>
             <Text style={styles.summaryText}>
               Membership Paid: ₹{membershipTotal}
@@ -101,19 +91,21 @@ export default function PaymentHistory() {
             <Text style={styles.summaryText}>
               Registration Paid: ₹{registrationTotal}
             </Text>
-            <Text style={styles.summaryText}>Total Paid: ₹{totalPaid}</Text>
+            <Text style={styles.totalText}>Total Paid: ₹{totalPaid}</Text>
           </View>
-
+          
           <View style={styles.summaryCard}>
             <Text style={styles.summaryText}>Cash: ₹{cashTotal}</Text>
             <Text style={styles.summaryText}>UPI: ₹{upiTotal}</Text>
             <Text style={styles.summaryText}>Online: ₹{onlineTotal}</Text>
           </View>
 
-          {/* Payment List */}
+          {/* PAYMENT LIST */}
           <FlatList
             data={payments}
             keyExtractor={(item) => item.id}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 20 }}
             renderItem={({ item }) => (
               <View style={styles.card}>
                 <Text style={styles.amount}>₹{item.amount}</Text>
@@ -129,7 +121,9 @@ export default function PaymentHistory() {
                 <Text style={styles.text}>
                   Date:{" "}
                   {item.paidOn?.seconds
-                    ? new Date(item.paidOn.seconds * 1000).toLocaleDateString()
+                    ? new Date(
+                        item.paidOn.seconds * 1000
+                      ).toLocaleDateString()
                     : "N/A"}
                 </Text>
               </View>
@@ -137,47 +131,85 @@ export default function PaymentHistory() {
           />
         </>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000",
-    padding: 15,
+    backgroundColor: "#f3f4f6", // ✅ light background
+    padding: 18,
+    paddingTop: 54
   },
+
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#000",
+    backgroundColor: "#f3f4f6",
   },
+
+  empty: {
+    textAlign: "center",
+    marginTop: 40,
+    color: "#6b7280",
+    fontSize: 15,
+  },
+
   summaryCard: {
-    backgroundColor: "#1c1c1c",
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
+    backgroundColor: "#fff",
+    padding: 16,
+    borderRadius: 14,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
   },
+
   summaryText: {
-    color: "#fff",
-    marginBottom: 5,
+    color: "#374151",
     fontSize: 14,
+    marginBottom: 4,
   },
+
+  totalText: {
+    marginTop: 6,
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#2563eb", // blue highlight
+  },
+
   card: {
-    backgroundColor: "#1c1c1c",
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
+    backgroundColor: "#fff",
+    padding: 16,
+    borderRadius: 14,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
   },
+
   amount: {
-    color: "#4CAF50",
+    color: "#16a34a", // green amount
     fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 5,
+    fontWeight: "700",
+    marginBottom: 6,
   },
+
   text: {
-    color: "#ccc",
+    color: "#4b5563",
+    fontSize: 13,
     marginBottom: 3,
   },
+  title: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#1f2937",
+    textAlign: "center",
+    marginBottom: 16,
+  },
 });
+

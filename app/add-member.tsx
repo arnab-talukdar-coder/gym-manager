@@ -1,9 +1,15 @@
 import GradientButton from "@/components/ui/GradientButton";
-import ScreenWrapper from "@/components/ui/ScreenWrapper";
 import { Picker } from "@react-native-picker/picker";
 import { addDoc, collection } from "firebase/firestore";
 import React, { useState } from "react";
-import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { db } from "../firebaseConfig";
 
 export default function AddMember() {
@@ -15,16 +21,11 @@ export default function AddMember() {
   const [idNumber, setIdNumber] = useState("");
   const [registrationFee, setRegistrationFee] = useState("");
   const [membershipFee, setMembershipFee] = useState("");
-
   const [regPaymentMethod, setRegPaymentMethod] = useState("");
   const [memPaymentMethod, setMemPaymentMethod] = useState("");
-
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
 
   const addMember = async () => {
-    setError("");
-
     if (
       !name ||
       !phone ||
@@ -42,8 +43,6 @@ export default function AddMember() {
     }
 
     try {
-      setLoading(true);
-
       const today = new Date();
       const nextDue = new Date();
       nextDue.setMonth(today.getMonth() + 1);
@@ -63,7 +62,6 @@ export default function AddMember() {
         status: "active",
       });
 
-      // Registration Payment
       await addDoc(collection(db, "payments"), {
         memberId: memberRef.id,
         amount: Number(registrationFee),
@@ -72,7 +70,6 @@ export default function AddMember() {
         type: "registration",
       });
 
-      // Membership Payment
       await addDoc(collection(db, "payments"), {
         memberId: memberRef.id,
         amount: Number(membershipFee),
@@ -81,181 +78,183 @@ export default function AddMember() {
         type: "membership",
       });
 
-      // Reset
-      setName("");
-      setPhone("");
-      setDob("");
-      setAge("");
-      setIdType("");
-      setIdNumber("");
-      setRegistrationFee("");
-      setMembershipFee("");
-      setRegPaymentMethod("");
-      setMemPaymentMethod("");
       setError("");
     } catch (err) {
-      console.log(err);
       setError("Error adding member");
-    } finally {
-      setLoading(false);
     }
   };
 
   return (
-    <ScreenWrapper>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Add New Member</Text>
+    <SafeAreaView style={styles.safe}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.page}
+      >
+        <View style={styles.form}>
+          <Text style={styles.title}>Add New Member</Text>
 
-        <TextInput
-          placeholder="Full Name"
-          placeholderTextColor="#999"
-          value={name}
-          onChangeText={setName}
-          style={styles.input}
-        />
+          <TextInput
+            placeholder="Full Name"
+            placeholderTextColor="#9ca3af"
+            value={name}
+            onChangeText={setName}
+            style={styles.input}
+          />
 
-        <TextInput
-          placeholder="Phone Number"
-          placeholderTextColor="#999"
-          value={phone}
-          onChangeText={setPhone}
-          style={styles.input}
-          keyboardType="numeric"
-        />
+          <TextInput
+            placeholder="Phone Number"
+            placeholderTextColor="#9ca3af"
+            value={phone}
+            onChangeText={setPhone}
+            style={styles.input}
+            keyboardType="numeric"
+          />
 
-        <TextInput
-          placeholder="Date of Birth (DD/MM/YYYY)"
-          placeholderTextColor="#999"
-          value={dob}
-          onChangeText={setDob}
-          style={styles.input}
-        />
+          <TextInput
+            placeholder="Date of Birth (DD/MM/YYYY)"
+            placeholderTextColor="#9ca3af"
+            value={dob}
+            onChangeText={setDob}
+            style={styles.input}
+          />
 
-        <TextInput
-          placeholder="Age"
-          placeholderTextColor="#999"
-          value={age}
-          onChangeText={setAge}
-          style={styles.input}
-          keyboardType="numeric"
-        />
+          <TextInput
+            placeholder="Age"
+            placeholderTextColor="#9ca3af"
+            value={age}
+            onChangeText={setAge}
+            style={styles.input}
+            keyboardType="numeric"
+          />
 
-        <Text style={styles.label}>Select ID Proof</Text>
-        <View style={styles.pickerContainer}>
-          <Picker
-            selectedValue={idType}
-            onValueChange={(itemValue) => setIdType(itemValue)}
-            dropdownIconColor="#fff"
-          >
-            <Picker.Item label="Select ID Type" value="" />
-            <Picker.Item label="Aadhar Card" value="Aadhar Card" />
-            <Picker.Item label="Voter ID" value="Voter ID" />
-            <Picker.Item label="Driving License" value="Driving License" />
-          </Picker>
+          <Text style={styles.label}>ID Proof</Text>
+          <View style={styles.pickerContainer}>
+            <Picker selectedValue={idType} onValueChange={setIdType}>
+              <Picker.Item label="Select ID Type" value="" />
+              <Picker.Item label="Aadhar Card" value="Aadhar Card" />
+              <Picker.Item label="Voter ID" value="Voter ID" />
+              <Picker.Item label="Driving License" value="Driving License" />
+            </Picker>
+          </View>
+
+          <TextInput
+            placeholder="ID Proof Number"
+            placeholderTextColor="#9ca3af"
+            value={idNumber}
+            onChangeText={setIdNumber}
+            style={styles.input}
+          />
+
+          <TextInput
+            placeholder="Registration Fee"
+            placeholderTextColor="#9ca3af"
+            value={registrationFee}
+            onChangeText={setRegistrationFee}
+            style={styles.input}
+            keyboardType="numeric"
+          />
+
+          <Text style={styles.label}>Registration Payment</Text>
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={regPaymentMethod}
+              onValueChange={setRegPaymentMethod}
+            >
+              <Picker.Item label="Select Payment Method" value="" />
+              <Picker.Item label="Cash" value="cash" />
+              <Picker.Item label="UPI" value="upi" />
+              <Picker.Item label="Online" value="online" />
+            </Picker>
+          </View>
+
+          <TextInput
+            placeholder="Membership Fee"
+            placeholderTextColor="#9ca3af"
+            value={membershipFee}
+            onChangeText={setMembershipFee}
+            style={styles.input}
+            keyboardType="numeric"
+          />
+
+          <Text style={styles.label}>Membership Payment</Text>
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={memPaymentMethod}
+              onValueChange={setMemPaymentMethod}
+            >
+              <Picker.Item label="Select Payment Method" value="" />
+              <Picker.Item label="Cash" value="cash" />
+              <Picker.Item label="UPI" value="upi" />
+              <Picker.Item label="Online" value="online" />
+            </Picker>
+          </View>
+
+          {error !== "" && <Text style={styles.error}>{error}</Text>}
+
+          <GradientButton title="ADD MEMBER" onPress={addMember} />
         </View>
-
-        <TextInput
-          placeholder="ID Proof Number"
-          placeholderTextColor="#999"
-          value={idNumber}
-          onChangeText={setIdNumber}
-          style={styles.input}
-        />
-
-        <TextInput
-          placeholder="Registration Fee"
-          placeholderTextColor="#999"
-          value={registrationFee}
-          onChangeText={setRegistrationFee}
-          style={styles.input}
-          keyboardType="numeric"
-        />
-
-        <Text style={styles.label}>Registration Payment Method</Text>
-        <View style={styles.pickerContainer}>
-          <Picker
-            selectedValue={regPaymentMethod}
-            onValueChange={(itemValue) => setRegPaymentMethod(itemValue)}
-          >
-            <Picker.Item label="Select Payment Method" value="" />
-            <Picker.Item label="Cash" value="cash" />
-            <Picker.Item label="UPI" value="upi" />
-            <Picker.Item label="Online" value="online" />
-          </Picker>
-        </View>
-
-        <TextInput
-          placeholder="Membership Fee"
-          placeholderTextColor="#999"
-          value={membershipFee}
-          onChangeText={setMembershipFee}
-          style={styles.input}
-          keyboardType="numeric"
-        />
-
-        <Text style={styles.label}>Membership Payment Method</Text>
-        <View style={styles.pickerContainer}>
-          <Picker
-            selectedValue={memPaymentMethod}
-            onValueChange={(itemValue) => setMemPaymentMethod(itemValue)}
-          >
-            <Picker.Item label="Select Payment Method" value="" />
-            <Picker.Item label="Cash" value="cash" />
-            <Picker.Item label="UPI" value="upi" />
-            <Picker.Item label="Online" value="online" />
-          </Picker>
-        </View>
-
-        {error !== "" && <Text style={styles.error}>{error}</Text>}
-
-        <GradientButton title="ADD MEMBER" onPress={addMember} />
       </ScrollView>
-    </ScreenWrapper>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safe: {
+    flex: 1,
+    backgroundColor: "#ffffff", 
+    paddingTop : 45// no gap background
+  },
+
+  page: {
     flexGrow: 1,
+  },
+
+  form: {
+    backgroundColor: "#ffffff",
     padding: 20,
   },
+
   title: {
-    color: "#fff",
     fontSize: 22,
+    fontWeight: "700",
+    color: "#1f2937",
+    textAlign: "center",
     marginBottom: 20,
-    textAlign: "center",
   },
+
   input: {
-    backgroundColor: "#1c1c1c",
-    color: "#fff",
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 15,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    marginBottom: 14,
+    color: "#111827",
+    fontSize: 15,
   },
+
   label: {
-    color: "#fff",
-    marginBottom: 5,
+    color: "#374151",
+    fontWeight: "600",
+    marginBottom: 6,
+    marginTop: 4,
+    fontSize: 14,
   },
+
   pickerContainer: {
-    backgroundColor: "#1c1c1c",
-    borderRadius: 8,
-    marginBottom: 15,
-    color: "#fff",
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderRadius: 12,
+    marginBottom: 14,
+    overflow: "hidden",
   },
-  button: {
-    backgroundColor: "#2196F3",
-    padding: 15,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
+
   error: {
-    color: "red",
-    marginBottom: 10,
+    color: "#dc2626",
     textAlign: "center",
+    marginVertical: 10,
+    fontWeight: "600",
   },
 });

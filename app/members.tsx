@@ -6,12 +6,13 @@ import {
   onSnapshot,
   updateDoc,
 } from "firebase/firestore";
-
 import React, { useEffect, useState } from "react";
-
 import {
   ActivityIndicator,
   FlatList,
+  Platform,
+  SafeAreaView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -35,15 +36,12 @@ export default function Members() {
       snapshot.forEach((doc) => {
         list.push({ id: doc.id, ...doc.data() });
       });
-      setMembers(list);
-      list.forEach((member) => {
-        checkAndSendReminder(member);
-      });
 
+      setMembers(list);
       setFilteredMembers(list);
       setLoading(false);
 
-      // 🔥 Auto archive check
+      list.forEach((member) => checkAndSendReminder(member));
       checkAndArchiveMembers(list);
     });
 
@@ -52,30 +50,26 @@ export default function Members() {
 
   const handleSearch = (text: string) => {
     setSearch(text);
-
     const filtered = members.filter(
-      (member) =>
-        member.name.toLowerCase().includes(text.toLowerCase()) ||
-        member.phone.includes(text),
+      (m) =>
+        m.name.toLowerCase().includes(text.toLowerCase()) ||
+        m.phone.includes(text)
     );
-
     setFilteredMembers(filtered);
   };
 
   const markAsPaid = async (member: any) => {
     const selectedMethod = selectedMethods[member.id];
-
     if (!selectedMethod) {
-      alert("Please select payment method first");
+      alert("Please select payment method");
       return;
     }
 
     try {
       const today = new Date();
-
       const baseDate = member.nextDueDate?.seconds
         ? new Date(member.nextDueDate.seconds * 1000)
-        : new Date();
+        : today;
 
       const nextDue = new Date(baseDate);
       nextDue.setMonth(nextDue.getMonth() + 1);
@@ -95,19 +89,15 @@ export default function Members() {
       });
 
       alert("Payment recorded");
-    } catch (error) {
-      console.log(error);
+    } catch (e) {
+      console.log(e);
     }
   };
 
   const calculateUnpaid = (member: any) => {
-    if (!member.nextDueDate || !member.nextDueDate.seconds) {
-      return 0;
-    }
-
+    if (!member.nextDueDate?.seconds) return 0;
     const today = new Date();
     const dueDate = new Date(member.nextDueDate.seconds * 1000);
-
     if (today <= dueDate) return 0;
 
     const diffMonths =
@@ -118,223 +108,279 @@ export default function Members() {
   };
 
   const getDueStatus = (member: any) => {
-    if (!member.nextDueDate?.seconds) return "no-date";
-
+    if (!member.nextDueDate?.seconds) return "OK";
     const today = new Date();
     const dueDate = new Date(member.nextDueDate.seconds * 1000);
+    const diffDays = Math.ceil(
+      (dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+    );
 
-    const diffTime = dueDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays < 0) return "overdue";
-    if (diffDays === 0) return "due-today";
-    if (diffDays <= 3) return "due-soon";
-
-    return "ok";
+    if (diffDays < 0) return "OVERDUE";
+    if (diffDays === 0) return "DUE TODAY";
+    if (diffDays <= 3) return "DUE SOON";
+    return "OK";
   };
+
   const checkAndSendReminder = async (member: any) => {
     if (!member.nextDueDate?.seconds) return;
-
     const today = new Date();
     const dueDate = new Date(member.nextDueDate.seconds * 1000);
+    const diffDays = Math.ceil(
+      (dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+    );
 
-    const diffTime = dueDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    // Send reminder 3 days before due
-    if (diffDays === 3) {
-      // prevent duplicate reminder same day
-      if (!member.lastReminderSent) {
-        console.log(`Reminder sent to ${member.name}`);
-
-        await updateDoc(doc(db, "members", member.id), {
-          lastReminderSent: today,
-        });
-      }
+    if (diffDays === 3 && !member.lastReminderSent) {
+      await updateDoc(doc(db, "members", member.id), {
+        lastReminderSent: today,
+      });
     }
   };
 
-  const checkAndArchiveMembers = async (memberList: any[]) => {
-    for (const member of memberList) {
-      const unpaid = calculateUnpaid(member);
-
-      if (unpaid >= 3 && member.status !== "archived") {
-        await updateDoc(doc(db, "members", member.id), {
-          status: "archived",
-        });
+  const checkAndArchiveMembers = async (list: any[]) => {
+    for (const m of list) {
+      if (calculateUnpaid(m) >= 3 && m.status !== "archived") {
+        await updateDoc(doc(db, "members", m.id), { status: "archived" });
       }
     }
   };
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#2196F3" />
-      </View>
+      <SafeAreaView style={styles.center}>
+        <ActivityIndicator size="large" color="#2563eb" />
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
-      {/* Search Bar */}
+    <SafeAreaView style={styles.safe}>
       <TextInput
         placeholder="Search by name or phone"
-        placeholderTextColor="#999"
+        placeholderTextColor="#9ca3af"
         value={search}
         onChangeText={handleSearch}
         style={styles.searchInput}
       />
 
-      {filteredMembers.length === 0 ? (
-        <View style={styles.center}>
-          <Text style={{ color: "#fff" }}>No Members Found</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={filteredMembers}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <View style={styles.card}>
-              <Text style={styles.name}>{item.name}</Text>
-              <Text style={styles.text}>Phone: {item.phone}</Text>
-              <Text style={styles.text}>
-                Membership Fee: ₹{item.membershipFee}
-              </Text>
-              <Text
-                style={{
-                  color: calculateUnpaid(item) > 0 ? "#ff4d4d" : "#4CAF50",
-                }}
-              >
-                Unpaid Months: {calculateUnpaid(item)}
-              </Text>
+      <FlatList
+        data={filteredMembers}
+        keyExtractor={(item) => item.id}
+        showsVerticalScrollIndicator={false}
+        renderItem={({ item }) => (
+          <View style={styles.card}>
+            <Text style={styles.name}>{item.name}</Text>
+            <Text style={styles.text}>📞 {item.phone}</Text>
+            <Text style={styles.text}>
+              💰 Fee: ₹{item.membershipFee}
+            </Text>
 
-              <Text style={{ color: "#ccc" }}>
-                Next Due:{" "}
-                {item.nextDueDate?.seconds
-                  ? new Date(item.nextDueDate.seconds * 1000).toDateString()
-                  : "Not Set"}
-              </Text>
+            <Text
+              style={[
+                styles.status,
+                calculateUnpaid(item) > 0 && styles.overdue,
+              ]}
+            >
+              Unpaid Months: {calculateUnpaid(item)}
+            </Text>
 
-              <Text
-                style={{ color: item.status === "archived" ? "red" : "white" }}
-              >
-                Status: {item.status}
-              </Text>
+            <Text style={styles.text}>
+              Next Due:{" "}
+              {item.nextDueDate?.seconds
+                ? new Date(
+                    item.nextDueDate.seconds * 1000
+                  ).toDateString()
+                : "Not set"}
+            </Text>
 
-              <View style={{ flexDirection: "row", marginTop: 8 }}>
-                {["cash", "upi", "online"].map((method) => (
-                  <TouchableOpacity
-                    key={method}
-                    onPress={() =>
-                      setSelectedMethods((prev) => ({
-                        ...prev,
-                        [item.id]: method,
-                      }))
-                    }
-                    style={{
-                      backgroundColor:
-                        selectedMethods[item.id] === method
-                          ? "#2196F3"
-                          : "#333",
-                      padding: 6,
-                      marginRight: 8,
-                      borderRadius: 6,
-                    }}
+            <Text
+              style={[
+                styles.status,
+                item.status === "archived" && styles.archived,
+              ]}
+            >
+              Status: {item.status}
+            </Text>
+
+            {/* PAYMENT METHODS */}
+            <View style={styles.methodRow}>
+              {["cash", "upi", "online"].map((method) => (
+                <TouchableOpacity
+                  key={method}
+                  onPress={() =>
+                    setSelectedMethods((p) => ({
+                      ...p,
+                      [item.id]: method,
+                    }))
+                  }
+                  style={[
+                    styles.methodBtn,
+                    selectedMethods[item.id] === method &&
+                      styles.methodSelected,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.methodText,
+                      selectedMethods[item.id] === method &&
+                        styles.methodTextSelected,
+                    ]}
                   >
-                    <Text style={{ color: "#fff" }}>
-                      {method.toUpperCase()}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-              <Text
-                style={{
-                  color:
-                    getDueStatus(item) === "overdue"
-                      ? "red"
-                      : getDueStatus(item) === "due-today"
-                        ? "orange"
-                        : getDueStatus(item) === "due-soon"
-                          ? "yellow"
-                          : "#4CAF50",
-                }}
-              >
-                Billing Status: {getDueStatus(item)}
-              </Text>
-
-              <TouchableOpacity
-                style={[
-                  styles.payButton,
-                  !selectedMethods[item.id] && { opacity: 0.5 },
-                ]}
-                disabled={!selectedMethods[item.id]}
-                onPress={() => markAsPaid(item)}
-              >
-                <Text style={{ color: "#fff" }}>Mark as Paid</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={{
-                  backgroundColor: "#333",
-                  padding: 8,
-                  borderRadius: 6,
-                  marginTop: 6,
-                  alignItems: "center",
-                }}
-                onPress={() =>
-                  router.push({
-                    pathname: "/payment-history",
-                    params: { memberId: item.id },
-                  })
-                }
-              >
-                <Text style={{ color: "#fff" }}>View Payment History</Text>
-              </TouchableOpacity>
+                    {method.toUpperCase()}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
-          )}
-        />
-      )}
-    </View>
+
+            <Text
+              style={[
+                styles.billing,
+                getDueStatus(item) === "OVERDUE"
+                  ? styles.overdue
+                  : getDueStatus(item) !== "OK" && styles.warning,
+              ]}
+            >
+              Billing: {getDueStatus(item)}
+            </Text>
+
+            <TouchableOpacity
+              style={[
+                styles.payButton,
+                !selectedMethods[item.id] && { opacity: 0.5 },
+              ]}
+              disabled={!selectedMethods[item.id]}
+              onPress={() => markAsPaid(item)}
+            >
+              <Text style={styles.payText}>Mark as Paid</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.historyBtn}
+              onPress={() =>
+                router.push({
+                  pathname: "/payment-history",
+                  params: { memberId: item.id },
+                })
+              }
+            >
+              <Text style={styles.historyText}>View Payment History</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+
+  safe: {
     flex: 1,
-    backgroundColor: "#000",
-    padding: 15,
+    backgroundColor: "#f3f4f6",
+    paddingHorizontal: 16,
+    paddingTop:
+      Platform.OS === "android"
+        ? (StatusBar.currentHeight ?? 664) + 12
+        : 24,
   },
+  
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#f3f4f6",
+    paddingTop : 24
   },
   searchInput: {
-    backgroundColor: "#1c1c1c",
-    color: "#fff",
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 15,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    marginBottom: 16,
+    color: "#111827",
+    
   },
   card: {
-    backgroundColor: "#1c1c1c",
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
+    backgroundColor: "#fff",
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 14,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
   },
   name: {
-    color: "#fff",
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: "700",
+    color: "#111827",
   },
   text: {
-    color: "#ccc",
+    color: "#4b5563",
     marginTop: 4,
   },
+  status: {
+    marginTop: 6,
+    fontWeight: "600",
+    color: "#2563eb",
+  },
+  overdue: {
+    color: "#dc2626",
+  },
+  warning: {
+    color: "#f59e0b",
+  },
+  archived: {
+    color: "#6b7280",
+  },
+  methodRow: {
+    flexDirection: "row",
+    marginTop: 10,
+  },
+  methodBtn: {
+    borderWidth: 1,
+    borderColor: "#c7d2fe",
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    marginRight: 8,
+  },
+  methodSelected: {
+    backgroundColor: "#2563eb",
+  },
+  methodText: {
+    color: "#2563eb",
+    fontWeight: "600",
+  },
+  methodTextSelected: {
+    color: "#fff",
+  },
+  billing: {
+    marginTop: 6,
+    fontWeight: "600",
+    color: "#16a34a",
+  },
   payButton: {
-    backgroundColor: "#4CAF50",
-    padding: 8,
-    borderRadius: 6,
+    backgroundColor: "#16a34a",
+    paddingVertical: 10,
+    borderRadius: 10,
     marginTop: 10,
     alignItems: "center",
   },
+  payText: {
+    color: "#fff",
+    fontWeight: "600",
+  },
+  historyBtn: {
+    marginTop: 8,
+    backgroundColor: "#dbeafe",
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  historyText: {
+    color: "#1e3a8a",
+    fontWeight: "600",
+  },
 });
+
