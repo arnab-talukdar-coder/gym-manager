@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { db } from "../firebaseConfig";
@@ -191,7 +192,9 @@ export default function AddMember() {
 
           {error !== "" && <Text style={styles.error}>{error}</Text>}
 
-          <GradientButton title="ADD MEMBER" onPress={addMember} />
+          <TouchableOpacity style={styles.lightButton} onPress={addMember}>
+            <Text>Add Member</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -201,8 +204,8 @@ export default function AddMember() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: "#ffffff", 
-    paddingTop : 45// no gap background
+    backgroundColor: "#ffffff",
+    paddingTop: 45, // no gap background
   },
 
   page: {
@@ -220,6 +223,14 @@ const styles = StyleSheet.create({
     color: "#1f2937",
     textAlign: "center",
     marginBottom: 20,
+  },
+
+  lightButton: {
+    backgroundColor: "#2563eb",
+    paddingVertical: 14,
+    borderRadius: 20,
+    alignItems: "center",
+    marginBottom: 12,
   },
 
   input: {
