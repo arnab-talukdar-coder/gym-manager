@@ -8,7 +8,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { db } from "../firebaseConfig";
+import { db } from "../../firebaseConfig";
 
 export default function PaymentHistory() {
   const { memberId } = useLocalSearchParams();

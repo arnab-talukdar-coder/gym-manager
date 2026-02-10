@@ -18,7 +18,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { db } from "../firebaseConfig";
+import { db } from "../../firebaseConfig";
 
 export default function Members() {
   const [members, setMembers] = useState<any[]>([]);
@@ -222,7 +222,7 @@ export default function Members() {
               </Text>
 
               <View style={{ flexDirection: "row", marginTop: 8 }}>
-                {["cash", "upi", "online"].map((method) => (
+                {["cash", "upi"].map((method) => (
                   <TouchableOpacity
                     key={method}
                     onPress={() =>
@@ -282,7 +282,7 @@ export default function Members() {
                 }}
                 onPress={() =>
                   router.push({
-                    pathname: "/payment-history",
+                    pathname: "/protected/payment-history",
                     params: { memberId: item.id },
                   })
                 }

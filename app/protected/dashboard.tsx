@@ -1,6 +1,3 @@
-import GlassCard from "@/components/ui/GlassCard";
-import GradientButton from "@/components/ui/GradientButton";
-import ScreenWrapper from "@/components/ui/ScreenWrapper";
 import { router } from "expo-router";
 import { collection, onSnapshot } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
@@ -9,10 +6,11 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  View
+  TouchableOpacity,
+  View,
 } from "react-native";
-import LogoutButton from "../components/LogoutButton";
-import { db } from "../firebaseConfig";
+import LogoutButton from "../../components/LogoutButton";
+import { db } from "../../firebaseConfig";
 
 export default function Dashboard() {
   const [membershipRevenue, setMembershipRevenue] = useState(0);
@@ -50,13 +48,10 @@ export default function Dashboard() {
               paidDate.getMonth() === currentMonth &&
               paidDate.getFullYear() === currentYear
             ) {
-              if (data.type === "membership") {
-                membership += Number(data.amount);
-              }
+              if (data.type === "membership") membership += Number(data.amount);
 
-              if (data.type === "registration") {
+              if (data.type === "registration")
                 registration += Number(data.amount);
-              }
 
               if (data.method === "cash") cash += Number(data.amount);
               if (data.method === "upi") upi += Number(data.amount);
@@ -137,70 +132,84 @@ export default function Dashboard() {
   const totalRevenue = membershipRevenue + registrationRevenue;
 
   return (
-    <ScreenWrapper>
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <View style={styles.page}>
+      <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.title}>Gym Dashboard</Text>
 
-        <GlassCard>
+        <View style={styles.card}>
           <Text style={styles.cardText}>
             Membership Revenue: ₹{membershipRevenue}
           </Text>
-        </GlassCard>
+        </View>
 
-        <GlassCard>
+        <View style={styles.card}>
           <Text style={styles.cardText}>
             Registration Revenue: ₹{registrationRevenue}
           </Text>
-        </GlassCard>
+        </View>
 
-        <GlassCard>
+        <View style={styles.card}>
           <Text style={styles.cardText}>Total Revenue: ₹{totalRevenue}</Text>
-        </GlassCard>
+        </View>
 
-        <GlassCard>
+        <View style={styles.card}>
           <Text style={styles.cardText}>Cash: ₹{cashTotal}</Text>
           <Text style={styles.cardText}>UPI: ₹{upiTotal}</Text>
           <Text style={styles.cardText}>Online: ₹{onlineTotal}</Text>
-        </GlassCard>
+        </View>
 
-        <GlassCard>
+        <View style={styles.card}>
           <Text style={styles.cardText}>
             Joined This Month: {joinedThisMonth}
           </Text>
-        </GlassCard>
+        </View>
 
-        <GlassCard>
+        <View style={styles.card}>
           <Text style={styles.cardText}>Due Today: {dueToday}</Text>
           <Text style={styles.cardText}>Overdue: {overdueCount}</Text>
-        </GlassCard>
+        </View>
 
-        <GlassCard>
+        <View style={styles.card}>
           <Text style={styles.cardText}>Active: {activeMembers}</Text>
           <Text style={styles.cardText}>Archived: {archivedMembers}</Text>
-        </GlassCard>
+        </View>
 
-        <GradientButton
-          title="View Members"
-          onPress={() => router.push("/members")}
-        />
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => router.push("/protected/members")}
+        >
+          <Text style={styles.buttonText}>View Members</Text>
+        </TouchableOpacity>
 
-        <GradientButton
-          title="Add Member"
-          onPress={() => router.push("/add-member")}
-        />
-        <GradientButton
-          title="Monthly Report"
-          onPress={() => router.push("/monthly-report")}
-        />
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => router.push("/protected/add-member")}
+        >
+          <Text style={styles.buttonText}>Add Member</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => router.push("/protected/monthly-report")}
+        >
+          <Text style={styles.buttonText}>Monthly Report</Text>
+        </TouchableOpacity>
 
         <LogoutButton />
       </ScrollView>
-    </ScreenWrapper>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#000", padding: 20 },
+  page: {
+    flex: 1,
+    backgroundColor: "#000",
+  },
+
+  container: {
+    padding: 15,
+  },
   title: {
     color: "#fff",
     fontSize: 22,
@@ -213,7 +222,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 12,
   },
-  cardText: { color: "#fff", fontSize: 15 },
+  cardText: {
+    color: "#fff",
+    fontSize: 15,
+    marginBottom: 4,
+  },
   button: {
     backgroundColor: "#2196F3",
     padding: 14,
@@ -221,7 +234,10 @@ const styles = StyleSheet.create({
     marginTop: 10,
     alignItems: "center",
   },
-  buttonText: { color: "#fff", fontSize: 16 },
+  buttonText: {
+    color: "#fff",
+    fontSize: 16,
+  },
   center: {
     flex: 1,
     justifyContent: "center",

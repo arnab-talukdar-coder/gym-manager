@@ -2,6 +2,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import React, { useState } from "react";
+import { setLoggedIn } from "../utils/localAuth";
+
 import {
   ActivityIndicator,
   StyleSheet,
@@ -41,7 +43,8 @@ export default function PinLogin() {
         await AsyncStorage.setItem("user", phone);
         setPhone("");
         setPin("");
-        router.replace("/dashboard");
+        await setLoggedIn();
+        router.replace("/protected/dashboard");
       } else {
         setError("Invalid phone or PIN");
       }
