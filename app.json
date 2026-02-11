@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "gym-manager",
-    "slug": "gym-manager",
+    "name": "The Fitness Junction",
+    "slug": "The Fitness Junction",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "https://customer-assets.emergentagent.com/job_gym-launch-site/artifacts/7c6h42gu_TFJ_Print_Original.png",
-    "scheme": "gymmanager",
+    "icon": "./assets/images/FitLogo.png",
+    "scheme": "The Fitness Junction",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
