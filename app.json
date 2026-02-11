@@ -4,36 +4,41 @@
     "slug": "gym-manager",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/GymLogo.png",
+    "icon": "https://customer-assets.emergentagent.com/job_gym-launch-site/artifacts/7c6h42gu_TFJ_Print_Original.png",
     "scheme": "gymmanager",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true
     },
-    
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "https://customer-assets.emergentagent.com/job_gym-launch-site/artifacts/7c6h42gu_TFJ_Print_Original.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
+          "image": "https://customer-assets.emergentagent.com/job_gym-launch-site/artifacts/7c6h42gu_TFJ_Print_Original.png",
+          "imageWidth": 250,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
-          "dark": {
-            "backgroundColor": "#000000"
-          }
+          "backgroundColor": "#ffffff"
         }
       ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "bb9e9d68-7070-4344-b7b5-5534125eea70"
+      }
+    },
+    "android": {
+      "package": "com.tfj0011.gymmanager"
     }
   }
 }

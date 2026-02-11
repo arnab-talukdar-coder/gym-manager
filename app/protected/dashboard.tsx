@@ -10,8 +10,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import LogoutButton from "../components/LogoutButton";
-import { db } from "../firebaseConfig";
+import LogoutButton from "../../components/LogoutButton";
+import { db } from "../../firebaseConfig";
 
 export default function Dashboard() {
   const [membershipRevenue, setMembershipRevenue] = useState(0);
@@ -47,8 +47,7 @@ export default function Dashboard() {
               paidDate.getMonth() === currentMonth &&
               paidDate.getFullYear() === currentYear
             ) {
-              if (data.type === "membership")
-                membership += Number(data.amount);
+              if (data.type === "membership") membership += Number(data.amount);
               if (data.type === "registration")
                 registration += Number(data.amount);
 
@@ -64,7 +63,7 @@ export default function Dashboard() {
         setCashTotal(cash);
         setUpiTotal(upi);
         setOnlineTotal(online);
-      }
+      },
     );
 
     const unsubscribeMembers = onSnapshot(
@@ -96,8 +95,7 @@ export default function Dashboard() {
           if (data.nextDueDate?.seconds) {
             const dueDate = new Date(data.nextDueDate.seconds * 1000);
             const diff = Math.ceil(
-              (dueDate.getTime() - today.getTime()) /
-                (1000 * 60 * 60 * 24)
+              (dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
             );
             if (diff === 0) due++;
             if (diff < 0) overdue++;
@@ -110,7 +108,7 @@ export default function Dashboard() {
         setOverdueCount(overdue);
         setJoinedThisMonth(joined);
         setLoading(false);
-      }
+      },
     );
 
     return () => {
@@ -212,21 +210,21 @@ export default function Dashboard() {
         {/* BUTTONS */}
         <TouchableOpacity
           style={styles.lightButton}
-          onPress={() => router.push("/members")}
+          onPress={() => router.push("/protected/members")}
         >
           <Text style={styles.lightButtonText}>View Members</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.primaryButton}
-          onPress={() => router.push("/add-member")}
+          onPress={() => router.push("/protected/add-member")}
         >
           <Text style={styles.primaryButtonText}>Add Member</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.lightButton}
-          onPress={() => router.push("/monthly-report")}
+          onPress={() => router.push("/protected/monthly-report")}
         >
           <Text style={styles.lightButtonText}>Monthly Report</Text>
         </TouchableOpacity>
@@ -367,6 +365,3 @@ const styles = StyleSheet.create({
     backgroundColor: "#f3f4f6",
   },
 });
-
-
-

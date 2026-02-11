@@ -1,15 +1,18 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+
 import { router } from "expo-router";
 import { collection, getDocs, query, where } from "firebase/firestore";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { checkLoggedIn, setLoggedIn } from "../utils/localAuth";
+
 import {
   ActivityIndicator,
+  Image,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-  Image,
 } from "react-native";
 import { db } from "../firebaseConfig";
 
@@ -18,6 +21,17 @@ export default function PinLogin() {
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    const checkAuth = async () => {
+      const loggedIn = await checkLoggedIn();
+
+      if (loggedIn) {
+        router.replace("/protected/dashboard");
+      }
+    };
+
+    checkAuth();
+  }, []);
 
   const handleLogin = async () => {
     setError("");
@@ -31,9 +45,9 @@ export default function PinLogin() {
       setLoading(true);
 
       const q = query(
-        collection(db, "Users"),
+        collection(db, "Users"), // ⚠️ make sure this matches Firestore exactly
         where("phone", "==", phone),
-        where("pin", "==", pin)
+        where("pin", "==", pin),
       );
 
       const snapshot = await getDocs(q);
@@ -42,7 +56,8 @@ export default function PinLogin() {
         await AsyncStorage.setItem("user", phone);
         setPhone("");
         setPin("");
-        router.replace("/dashboard");
+        await setLoggedIn();
+        router.replace("/protected/dashboard");
       } else {
         setError("Invalid phone or PIN");
       }
@@ -128,16 +143,16 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     padding: 8,
     borderRadius: 14,
-  
+
     // 🌟 WHITE SHADOW / GLOW
     shadowColor: "#ffffff",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.6,
     shadowRadius: 10,
-  
+
     // Android glow
     elevation: 6,
-  
+
     marginBottom: 16,
   },
 

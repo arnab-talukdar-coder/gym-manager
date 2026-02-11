@@ -1,4 +1,3 @@
-import GradientButton from "@/components/ui/GradientButton";
 import { Picker } from "@react-native-picker/picker";
 import { addDoc, collection } from "firebase/firestore";
 import React, { useState } from "react";
@@ -11,7 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { db } from "../firebaseConfig";
+import { db } from "../../firebaseConfig";
 
 export default function AddMember() {
   const [name, setName] = useState("");

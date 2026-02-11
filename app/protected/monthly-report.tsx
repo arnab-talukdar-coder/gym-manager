@@ -13,7 +13,7 @@ import {
   View,
 } from "react-native";
 import { BarChart } from "react-native-chart-kit";
-import { db } from "../firebaseConfig";
+import { db } from "../../firebaseConfig";
 
 export default function MonthlyReport() {
   const screenWidth = Dimensions.get("window").width;
@@ -31,36 +31,109 @@ export default function MonthlyReport() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   const exportToPDF = async () => {
-    const html = `
+    try {
+      const monthLabel = new Date(selectedYear, selectedMonth).toLocaleString(
+        "default",
+        {
+          month: "long",
+          year: "numeric",
+        },
+      );
+
+      const totalRevenue = membershipRevenue + registrationRevenue;
+
+      const html = `
       <html>
-        <body style="font-family: Arial; padding: 20px;">
-          <h2>Monthly Report</h2>
-          <h3>${new Date(selectedYear, selectedMonth).toLocaleString(
-            "default",
-            {
-              month: "long",
-              year: "numeric",
+        <head>
+          <style>
+            body {
+              font-family: Arial;
+              padding: 40px;
             }
-          )}</h3>
+            h1 {
+              text-align: center;
+              color: #2563eb;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-top: 20px;
+            }
+            td {
+              padding: 10px 0;
+            }
+            .total {
+              font-weight: bold;
+              border-top: 1px solid #000;
+              padding-top: 10px;
+            }
+          </style>
+        </head>
 
-          <p><b>Membership:</b> ₹${membershipRevenue}</p>
-          <p><b>Registration:</b> ₹${registrationRevenue}</p>
-          <p><b>Total:</b> ₹${membershipRevenue + registrationRevenue}</p>
+        <body>
+          <h1>The Fitness Junction</h1>
+          <h2 style="text-align:center;">Monthly Revenue Report</h2>
+          <h3 style="text-align:center;">${monthLabel}</h3>
 
-          <hr />
-          <p><b>Cash:</b> ₹${cashTotal}</p>
-          <p><b>UPI:</b> ₹${upiTotal}</p>
-          <p><b>Online:</b> ₹${onlineTotal}</p>
+          <table>
+            <tr>
+              <td>Membership Revenue</td>
+              <td align="right">₹${membershipRevenue}</td>
+            </tr>
+            <tr>
+              <td>Registration Revenue</td>
+              <td align="right">₹${registrationRevenue}</td>
+            </tr>
+            <tr>
+              <td>Cash Revenue</td>
+              <td align="right">₹${cashTotal}</td>
+            </tr>
+            <tr>
+              <td>UPI Revenue</td>
+              <td align="right">₹${upiTotal}</td>
+            </tr>
+            <tr>
+              <td>Online Revenue</td>
+              <td align="right">₹${onlineTotal}</td>
+            </tr>
+            <tr class="total">
+              <td>Total Revenue</td>
+              <td align="right">₹${totalRevenue}</td>
+            </tr>
+          </table>
 
-          <hr />
-          <p><b>Paid Members:</b> ${paidMembers.length}</p>
-          <p><b>Unpaid Members:</b> ${unpaidMembers.length}</p>
+          <br/><br/>
+
+          <p><strong>Paid Members:</strong> ${paidMembers.length}</p>
+          <p><strong>Unpaid Members:</strong> ${unpaidMembers.length}</p>
+
+          <br/><br/>
+          <p style="text-align:center; font-size:12px; color:gray;">
+            Generated automatically by TFJ Gym Manager
+          </p>
         </body>
       </html>
     `;
 
-    const { uri } = await Print.printToFileAsync({ html });
-    await Sharing.shareAsync(uri);
+      const file = await Print.printToFileAsync({
+        html,
+        margins: {
+          left: 20,
+          right: 20,
+          top: 20,
+          bottom: 20,
+        },
+      });
+
+      if (!file?.uri) return;
+
+      await Sharing.shareAsync(file.uri, {
+        mimeType: "application/pdf",
+        dialogTitle: "Download Monthly Report",
+      });
+    } catch (error) {
+      console.log("PDF error:", error);
+    }
   };
 
   useEffect(() => {
@@ -166,7 +239,7 @@ export default function MonthlyReport() {
                   {
                     month: "long",
                     year: "numeric",
-                  }
+                  },
                 )}
               </Text>
 
@@ -218,7 +291,15 @@ export default function MonthlyReport() {
             <TouchableOpacity style={styles.exportButton} onPress={exportToPDF}>
               <Text style={styles.exportText}>Download PDF</Text>
             </TouchableOpacity>
+            <View style={styles.card}>
+              <Text style={styles.chartTitle}>Payment Mode Revenue</Text>
 
+              <View style={{ marginTop: 8 }}>
+                <Text style={styles.text}>Cash Revenue: ₹{cashTotal}</Text>
+                <Text style={styles.text}>UPI Revenue: ₹{upiTotal}</Text>
+                <Text style={styles.text}>Online Revenue: ₹{onlineTotal}</Text>
+              </View>
+            </View>
             {/* Payment Mode Chart */}
             <View style={styles.chartCard}>
               <Text style={styles.chartTitle}>Payment Mode</Text>

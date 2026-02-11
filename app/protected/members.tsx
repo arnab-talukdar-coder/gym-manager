@@ -19,7 +19,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { db } from "../firebaseConfig";
+import { db } from "../../firebaseConfig";
 
 export default function Members() {
   const [members, setMembers] = useState<any[]>([]);
@@ -53,7 +53,7 @@ export default function Members() {
     const filtered = members.filter(
       (m) =>
         m.name.toLowerCase().includes(text.toLowerCase()) ||
-        m.phone.includes(text)
+        m.phone.includes(text),
     );
     setFilteredMembers(filtered);
   };
@@ -112,7 +112,7 @@ export default function Members() {
     const today = new Date();
     const dueDate = new Date(member.nextDueDate.seconds * 1000);
     const diffDays = Math.ceil(
-      (dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+      (dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
     );
 
     if (diffDays < 0) return "OVERDUE";
@@ -126,7 +126,7 @@ export default function Members() {
     const today = new Date();
     const dueDate = new Date(member.nextDueDate.seconds * 1000);
     const diffDays = Math.ceil(
-      (dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+      (dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
     );
 
     if (diffDays === 3 && !member.lastReminderSent) {
@@ -170,9 +170,7 @@ export default function Members() {
           <View style={styles.card}>
             <Text style={styles.name}>{item.name}</Text>
             <Text style={styles.text}>📞 {item.phone}</Text>
-            <Text style={styles.text}>
-              💰 Fee: ₹{item.membershipFee}
-            </Text>
+            <Text style={styles.text}>💰 Fee: ₹{item.membershipFee}</Text>
 
             <Text
               style={[
@@ -186,9 +184,7 @@ export default function Members() {
             <Text style={styles.text}>
               Next Due:{" "}
               {item.nextDueDate?.seconds
-                ? new Date(
-                    item.nextDueDate.seconds * 1000
-                  ).toDateString()
+                ? new Date(item.nextDueDate.seconds * 1000).toDateString()
                 : "Not set"}
             </Text>
 
@@ -257,7 +253,7 @@ export default function Members() {
               style={styles.historyBtn}
               onPress={() =>
                 router.push({
-                  pathname: "/payment-history",
+                  pathname: "/protected/payment-history",
                   params: { memberId: item.id },
                 })
               }
@@ -272,23 +268,20 @@ export default function Members() {
 }
 
 const styles = StyleSheet.create({
-
   safe: {
     flex: 1,
     backgroundColor: "#f3f4f6",
     paddingHorizontal: 16,
     paddingTop:
-      Platform.OS === "android"
-        ? (StatusBar.currentHeight ?? 664) + 12
-        : 24,
+      Platform.OS === "android" ? (StatusBar.currentHeight ?? 664) + 12 : 24,
   },
-  
+
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#f3f4f6",
-    paddingTop : 24
+    paddingTop: 24,
   },
   searchInput: {
     backgroundColor: "#fff",
@@ -298,7 +291,6 @@ const styles = StyleSheet.create({
     borderColor: "#e5e7eb",
     marginBottom: 16,
     color: "#111827",
-    
   },
   card: {
     backgroundColor: "#fff",
@@ -383,4 +375,3 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
-

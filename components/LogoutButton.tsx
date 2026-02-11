@@ -1,11 +1,12 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity } from "react-native";
 
+import { setLoggedOut } from "../utils/localAuth";
+
 export default function LogoutButton() {
   const handleLogout = async () => {
-    await AsyncStorage.removeItem("user");
+    await setLoggedOut();
     router.replace("/pin-login");
   };
 

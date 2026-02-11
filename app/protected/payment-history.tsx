@@ -9,7 +9,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { db } from "../firebaseConfig";
+import { db } from "../../firebaseConfig";
 
 export default function PaymentHistory() {
   const { memberId } = useLocalSearchParams();
@@ -27,7 +27,7 @@ export default function PaymentHistory() {
 
     const q = query(
       collection(db, "payments"),
-      where("memberId", "==", memberId)
+      where("memberId", "==", memberId),
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -93,7 +93,7 @@ export default function PaymentHistory() {
             </Text>
             <Text style={styles.totalText}>Total Paid: ₹{totalPaid}</Text>
           </View>
-          
+
           <View style={styles.summaryCard}>
             <Text style={styles.summaryText}>Cash: ₹{cashTotal}</Text>
             <Text style={styles.summaryText}>UPI: ₹{upiTotal}</Text>
@@ -121,9 +121,7 @@ export default function PaymentHistory() {
                 <Text style={styles.text}>
                   Date:{" "}
                   {item.paidOn?.seconds
-                    ? new Date(
-                        item.paidOn.seconds * 1000
-                      ).toLocaleDateString()
+                    ? new Date(item.paidOn.seconds * 1000).toLocaleDateString()
                     : "N/A"}
                 </Text>
               </View>
@@ -140,7 +138,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f3f4f6", // ✅ light background
     padding: 18,
-    paddingTop: 54
+    paddingTop: 54,
   },
 
   center: {
@@ -212,4 +210,3 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
 });
-
