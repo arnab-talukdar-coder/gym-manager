@@ -199,7 +199,7 @@ export default function Members() {
 
             {/* PAYMENT METHODS */}
             <View style={styles.methodRow}>
-              {["cash", "upi", "online"].map((method) => (
+              {["cash", "upi"].map((method) => (
                 <TouchableOpacity
                   key={method}
                   onPress={() =>

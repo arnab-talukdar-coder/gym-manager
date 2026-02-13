@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "The Fitness Junction",
-    "slug": "The Fitness Junction",
+    "slug": "gym-manager",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/FitLogo.png",

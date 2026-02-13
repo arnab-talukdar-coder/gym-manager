@@ -163,7 +163,7 @@ export default function AddMember() {
               <Picker.Item label="Select Payment Method" value="" />
               <Picker.Item label="Cash" value="cash" />
               <Picker.Item label="UPI" value="upi" />
-              <Picker.Item label="Online" value="online" />
+              {/* <Picker.Item label="Online" value="online" /> */}
             </Picker>
           </View>
 
@@ -185,7 +185,7 @@ export default function AddMember() {
               <Picker.Item label="Select Payment Method" value="" />
               <Picker.Item label="Cash" value="cash" />
               <Picker.Item label="UPI" value="upi" />
-              <Picker.Item label="Online" value="online" />
+              {/* <Picker.Item label="Online" value="online" /> */}
             </Picker>
           </View>
 
