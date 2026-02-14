@@ -350,7 +350,7 @@ const chartGreen = {
 };
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#ffffff" },
+  safe: { flex: 1, backgroundColor: "#ffffff", paddingTop: -45 },
   container: {
     flex: 1,
     backgroundColor: "#f3f4f6",

@@ -140,7 +140,7 @@ export default function Dashboard() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.page,
-          { paddingBottom: insets.bottom + 100 },
+          { paddingBottom: insets.bottom},
         ]}
       >
         <Text style={styles.title}>Gym Dashboard</Text>
@@ -280,6 +280,7 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: "#f8fafc",
+    paddingTop: -50
   },
   fab: {
     position: "absolute",

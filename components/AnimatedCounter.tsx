@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Text, TextStyle } from "react-native";
+import { StyleProp, Text, TextStyle } from "react-native";
 import {
   runOnJS,
   useAnimatedReaction,
@@ -11,7 +11,7 @@ type Props = {
   value: number;
   duration?: number;
   prefix?: string;
-  style?: TextStyle;
+  style?: StyleProp<TextStyle>; 
 };
 
 export default function AnimatedCounter({

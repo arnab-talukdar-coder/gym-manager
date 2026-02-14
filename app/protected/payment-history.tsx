@@ -1,4 +1,5 @@
-import { useLocalSearchParams } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { router, useLocalSearchParams } from "expo-router";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import {
@@ -6,11 +7,10 @@ import {
   FlatList,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
-import {
-  SafeAreaView
-} from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { db } from "../../firebaseConfig";
 
 export default function PaymentHistory() {
@@ -29,7 +29,7 @@ export default function PaymentHistory() {
 
     const q = query(
       collection(db, "payments"),
-      where("memberId", "==", memberId),
+      where("memberId", "==", memberId)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -79,13 +79,24 @@ export default function PaymentHistory() {
   const totalPaid = membershipTotal + registrationTotal;
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+    <SafeAreaView style={styles.safe}>
+
+      {/* 🔥 HEADER WITH BACK BUTTON */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color="#111827" />
+        </TouchableOpacity>
+
+        <Text style={styles.title}>Payment History</Text>
+
+        <View style={{ width: 24 }} />
+      </View>
+
       {payments.length === 0 ? (
         <Text style={styles.empty}>No Payments Found</Text>
       ) : (
         <>
           {/* SUMMARY */}
-          <Text style={styles.title}>Payment History</Text>
           <View style={styles.summaryCard}>
             <Text style={styles.summaryText}>
               Membership Paid: ₹{membershipTotal}
@@ -93,7 +104,9 @@ export default function PaymentHistory() {
             <Text style={styles.summaryText}>
               Registration Paid: ₹{registrationTotal}
             </Text>
-            <Text style={styles.totalText}>Total Paid: ₹{totalPaid}</Text>
+            <Text style={styles.totalText}>
+              Total Paid: ₹{totalPaid}
+            </Text>
           </View>
 
           <View style={styles.summaryCard}>
@@ -123,7 +136,9 @@ export default function PaymentHistory() {
                 <Text style={styles.text}>
                   Date:{" "}
                   {item.paidOn?.seconds
-                    ? new Date(item.paidOn.seconds * 1000).toLocaleDateString()
+                    ? new Date(
+                        item.paidOn.seconds * 1000
+                      ).toLocaleDateString()
                     : "N/A"}
                 </Text>
               </View>
@@ -136,12 +151,24 @@ export default function PaymentHistory() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#ffffff" },
-  container: {
+  safe: {
     flex: 1,
-    backgroundColor: "#f3f4f6", // ✅ light background
-    padding: 18,
-    paddingTop: 54,
+    backgroundColor: "#f3f4f6",
+    paddingHorizontal: 16,
+  },
+
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 10,
+    marginBottom: 20,
+  },
+
+  title: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#1f2937",
   },
 
   center: {
@@ -163,9 +190,6 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 14,
     marginBottom: 12,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
     elevation: 3,
   },
 
@@ -179,7 +203,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontSize: 16,
     fontWeight: "700",
-    color: "#2563eb", // blue highlight
+    color: "#2563eb",
   },
 
   card: {
@@ -187,14 +211,11 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 14,
     marginBottom: 12,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
     elevation: 3,
   },
 
   amount: {
-    color: "#16a34a", // green amount
+    color: "#16a34a",
     fontSize: 18,
     fontWeight: "700",
     marginBottom: 6,
@@ -205,11 +226,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginBottom: 3,
   },
-  title: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#1f2937",
-    textAlign: "center",
-    marginBottom: 16,
-  },
 });
+

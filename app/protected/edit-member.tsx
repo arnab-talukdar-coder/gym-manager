@@ -1,5 +1,6 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Picker } from "@react-native-picker/picker";
+import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
@@ -122,7 +123,17 @@ export default function EditMember() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>Edit Member</Text>
+
+        {/* 🔥 HEADER WITH BACK BUTTON */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color="#111827" />
+          </TouchableOpacity>
+
+          <Text style={styles.title}>Edit Member</Text>
+
+          <View style={{ width: 24 }} />
+        </View>
 
         {/* NAME */}
         <Text style={styles.label}>Name *</Text>
@@ -143,7 +154,7 @@ export default function EditMember() {
           style={styles.input}
           onPress={() => setShowDobPicker(true)}
         >
-          <Text style={{ padding: 12 }}>
+          <Text style={styles.dateText}>
             {dob ? formatDate(dob) : "Select DOB"}
           </Text>
         </TouchableOpacity>
@@ -194,7 +205,7 @@ export default function EditMember() {
           style={styles.input}
           onPress={() => setShowRegPicker(true)}
         >
-          <Text style={{ padding: 12 }}>
+          <Text style={styles.dateText}>
             {registrationDate
               ? formatDate(registrationDate)
               : "Select Registration Date"}
@@ -219,7 +230,7 @@ export default function EditMember() {
           style={styles.input}
           onPress={() => setShowDuePicker(true)}
         >
-          <Text style={{ padding: 12 }}>
+          <Text style={styles.dateText}>
             {nextDueDate ? formatDate(nextDueDate) : "Select Next Due Date"}
           </Text>
         </TouchableOpacity>
@@ -255,13 +266,21 @@ export default function EditMember() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#f3f4f6" },
   container: { padding: 20 },
-  title: {
-    fontSize: 22,
-    fontWeight: "700",
+
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 20,
-    textAlign: "center",
   },
+
+  title: {
+    fontSize: 20,
+    fontWeight: "700",
+  },
+
   label: { marginTop: 12, fontWeight: "600" },
+
   input: {
     backgroundColor: "#fff",
     borderRadius: 12,
@@ -269,22 +288,31 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#e5e7eb",
   },
+
+  dateText: {
+    padding: 12,
+    color: "#374151",
+  },
+
   ageText: {
     marginTop: 6,
     color: "#2563eb",
     fontWeight: "600",
   },
+
   error: {
     color: "#dc2626",
     marginTop: 10,
     textAlign: "center",
     fontWeight: "600",
   },
+
   buttonRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginTop: 30,
   },
+
   cancelBtn: {
     flex: 1,
     backgroundColor: "#e5e7eb",
@@ -293,10 +321,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 10,
   },
+
   cancelText: {
     fontWeight: "600",
     color: "#374151",
   },
+
   saveBtn: {
     flex: 1,
     backgroundColor: "#2563eb",
@@ -304,8 +334,10 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: "center",
   },
+
   saveText: {
     color: "#fff",
     fontWeight: "600",
   },
 });
+
