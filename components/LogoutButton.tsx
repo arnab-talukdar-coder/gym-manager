@@ -10,9 +10,17 @@ export default function LogoutButton() {
     router.replace("/pin-login");
   };
 
+  if (minimal) {
+    return (
+      <TouchableOpacity onPress={handleLogout} style={{ marginRight: 16 }}>
+        <Ionicons name="log-out-outline" size={22} color="#ef4444" />
+      </TouchableOpacity>
+    );
+  }
+
   return (
     <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-      <Text style={styles.text}>Logout</Text>
+      <Text style={styles.logoutText}>Logout</Text>
     </TouchableOpacity>
   );
 }

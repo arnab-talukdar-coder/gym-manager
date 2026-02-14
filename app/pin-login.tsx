@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { router } from "expo-router";
 import { collection, getDocs, query, where } from "firebase/firestore";
@@ -26,7 +27,7 @@ export default function PinLogin() {
       const loggedIn = await checkLoggedIn();
 
       if (loggedIn) {
-        router.replace("/protected/dashboard");
+        router.replace("/protected/(tabs)/dashboard");
       }
     };
 
@@ -70,50 +71,52 @@ export default function PinLogin() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.card}>
-        {/* LOGO */}
-        <View style={styles.logoWrapper}>
-          <Image
-            source={require("../assets/images/TFJ_Print_Original.png")}
-            style={styles.logo}
-            resizeMode="contain"
-            fadeDuration={0}
+    <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom"]}>
+      <View style={styles.container}>
+        <View style={styles.card}>
+          {/* LOGO */}
+          <View style={styles.logoWrapper}>
+            <Image
+              source={require("../assets/images/TFJ_Print_Original.png")}
+              style={styles.logo}
+              resizeMode="contain"
+              fadeDuration={0}
+            />
+          </View>
+
+          <Text style={styles.title}>Login To Continue</Text>
+
+          <TextInput
+            placeholder="Phone Number"
+            placeholderTextColor="#9ca3af"
+            style={styles.input}
+            value={phone}
+            onChangeText={setPhone}
+            keyboardType="numeric"
           />
+
+          <TextInput
+            placeholder="4-digit PIN"
+            placeholderTextColor="#9ca3af"
+            style={styles.input}
+            value={pin}
+            onChangeText={setPin}
+            secureTextEntry
+            keyboardType="numeric"
+          />
+
+          <TouchableOpacity style={styles.button} onPress={handleLogin}>
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Login</Text>
+            )}
+          </TouchableOpacity>
+
+          {error !== "" && <Text style={styles.errorText}>{error}</Text>}
         </View>
-
-        <Text style={styles.title}>Login To Continue</Text>
-
-        <TextInput
-          placeholder="Phone Number"
-          placeholderTextColor="#9ca3af"
-          style={styles.input}
-          value={phone}
-          onChangeText={setPhone}
-          keyboardType="numeric"
-        />
-
-        <TextInput
-          placeholder="4-digit PIN"
-          placeholderTextColor="#9ca3af"
-          style={styles.input}
-          value={pin}
-          onChangeText={setPin}
-          secureTextEntry
-          keyboardType="numeric"
-        />
-
-        <TouchableOpacity style={styles.button} onPress={handleLogin}>
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Login</Text>
-          )}
-        </TouchableOpacity>
-
-        {error !== "" && <Text style={styles.errorText}>{error}</Text>}
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 

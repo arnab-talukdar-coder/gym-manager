@@ -4,11 +4,13 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
-  SafeAreaView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import {
+  SafeAreaView
+} from "react-native-safe-area-context";
 import { db } from "../../firebaseConfig";
 
 export default function PaymentHistory() {
@@ -77,7 +79,7 @@ export default function PaymentHistory() {
   const totalPaid = membershipTotal + registrationTotal;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       {payments.length === 0 ? (
         <Text style={styles.empty}>No Payments Found</Text>
       ) : (
@@ -134,6 +136,7 @@ export default function PaymentHistory() {
 }
 
 const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: "#ffffff" },
   container: {
     flex: 1,
     backgroundColor: "#f3f4f6", // ✅ light background

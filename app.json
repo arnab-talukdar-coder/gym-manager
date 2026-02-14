@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "The Fitness Junction",
-    "slug": "gym-manager",
+    "slug": "the-fitness-junction",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/FitLogo.png",
@@ -25,7 +25,8 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,
@@ -34,7 +35,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "bb9e9d68-7070-4344-b7b5-5534125eea70"
+        "projectId": "9a7ea065-b599-4cc6-891f-b0b63cbf970b"
       }
     },
     "android": {

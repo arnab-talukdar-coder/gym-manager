@@ -6,14 +6,14 @@ import {
   ActivityIndicator,
   Dimensions,
   FlatList,
-  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
 import { BarChart } from "react-native-chart-kit";
-import { db } from "../../firebaseConfig";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { db } from "../../../firebaseConfig";
 
 export default function MonthlyReport() {
   const screenWidth = Dimensions.get("window").width;
@@ -207,7 +207,7 @@ export default function MonthlyReport() {
   const totalRevenue = membershipRevenue + registrationRevenue;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <FlatList
         data={unpaidMembers}
         keyExtractor={(item) => item.id}
@@ -350,6 +350,7 @@ const chartGreen = {
 };
 
 const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: "#ffffff" },
   container: {
     flex: 1,
     backgroundColor: "#f3f4f6",
