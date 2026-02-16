@@ -20,6 +20,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { db } from "../../firebaseConfig";
+import { push, replace } from "expo-router/build/global-state/routing";
 
 export default function AddMember() {
   const insets = useSafeAreaInsets();
@@ -93,7 +94,7 @@ export default function AddMember() {
 
     if (missing.length > 0) {
       setError(
-        `${missing.join(", ")} ${missing.length > 1 ? "are" : "is"} mandatory`,
+        `${missing.join(", ")} ${missing.length > 1 ? "are" : "is"} mandatory`
       );
       return false;
     }
@@ -109,7 +110,7 @@ export default function AddMember() {
       if (memberType === "new") {
         const phoneQuery = query(
           collection(db, "members"),
-          where("phone", "==", phone),
+          where("phone", "==", phone)
         );
         const phoneSnapshot = await getDocs(phoneQuery);
         if (!phoneSnapshot.empty) {
@@ -142,6 +143,7 @@ export default function AddMember() {
         membershipFee: memberType === "new" ? Number(membershipFee) || 0 : 0,
         memberType,
         status: "active",
+        createdAt: new Date(),
       });
 
       if (memberType === "new") {
@@ -169,7 +171,7 @@ export default function AddMember() {
       }
 
       Alert.alert("Success", "Member added successfully");
-      router.back();
+      router.push("/protected/(tabs)/members");
     } catch (err) {
       console.log(err);
       setError("Error adding member");
@@ -236,12 +238,16 @@ export default function AddMember() {
 
           {showDobPicker && (
             <DateTimePicker
-              value={dob || new Date()}
+              value={dob ?? new Date(2000, 0, 1)}
               mode="date"
               maximumDate={new Date()}
-              onChange={(e, d) => {
+              display="default"
+              onChange={(event, selectedDate) => {
                 setShowDobPicker(false);
-                if (d) setDob(d);
+
+                if (event.type === "set" && selectedDate) {
+                  setDob(selectedDate);
+                }
               }}
             />
           )}

@@ -6,6 +6,8 @@ import {
   deleteDoc,
   doc,
   onSnapshot,
+  orderBy,
+  query,
   updateDoc,
 } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
@@ -21,7 +23,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { db } from "../../../firebaseConfig";
 
 export default function Members() {
@@ -42,12 +47,24 @@ export default function Members() {
   /* FETCH MEMBERS */
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "members"), (snapshot) => {
-      const list: any[] = [];
-      snapshot.forEach((d) => list.push({ id: d.id, ...d.data() }));
+      let list: any[] = [];
+
+      snapshot.forEach((d) => {
+        list.push({ id: d.id, ...d.data() });
+      });
+
+      // 🔥 SORT BY createdAt LOCALLY
+      list.sort((a, b) => {
+        if (!a.createdAt || !b.createdAt) return 0;
+        console.log(a.createdAt+" lll")
+        return a.createdAt.seconds - b.createdAt.seconds; // old first, new last
+      });
+
       setMembers(list);
       setFiltered(list);
       setLoading(false);
     });
+
     return () => unsub();
   }, []);
 
@@ -103,30 +120,28 @@ export default function Members() {
 
   const processPayment = async () => {
     if (!selectedMember) return;
-  
+
     const payAmount = Number(amount);
     if (!payAmount || payAmount <= 0) {
       Alert.alert("Invalid amount");
       return;
     }
-  
+
     const today = new Date();
-  
+
     let baseDate;
-  
+
     if (selectedMember.nextDueDate?.seconds) {
       // 🔥 Always extend from last due date
-      baseDate = new Date(
-        selectedMember.nextDueDate.seconds * 1000
-      );
+      baseDate = new Date(selectedMember.nextDueDate.seconds * 1000);
     } else {
       // If no due date exists
       baseDate = today;
     }
-  
+
     const nextDue = new Date(baseDate);
     nextDue.setMonth(nextDue.getMonth() + 1);
-  
+
     try {
       // Save payment
       await addDoc(collection(db, "payments"), {
@@ -137,14 +152,14 @@ export default function Members() {
         method: paymentMethod,
         type: "membership",
       });
-  
+
       // Update member
       await updateDoc(doc(db, "members", selectedMember.id), {
         lastPaidDate: today,
         nextDueDate: nextDue,
         status: "active",
       });
-  
+
       setPaymentModal(false);
       Alert.alert("Payment Recorded");
     } catch (error) {
@@ -152,8 +167,6 @@ export default function Members() {
       Alert.alert("Payment failed");
     }
   };
-  
-  
 
   /* DELETE */
   const confirmDelete = async () => {
@@ -175,7 +188,6 @@ export default function Members() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
-
         <TextInput
           placeholder="Search..."
           value={search}
@@ -192,7 +204,6 @@ export default function Members() {
 
             return (
               <View style={styles.card}>
-
                 <View style={styles.cardHeader}>
                   <View>
                     <Text style={styles.name}>{item.name}</Text>
@@ -204,7 +215,11 @@ export default function Members() {
                       style={styles.iconBtn}
                       onPress={() => openWhatsApp(item.phone)}
                     >
-                      <Ionicons name="logo-whatsapp" size={20} color="#16a34a" />
+                      <Ionicons
+                        name="logo-whatsapp"
+                        size={20}
+                        color="#16a34a"
+                      />
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -285,7 +300,6 @@ export default function Members() {
                 >
                   <Text style={styles.historyText}>View Payment History</Text>
                 </TouchableOpacity>
-
               </View>
             );
           }}
@@ -356,7 +370,6 @@ export default function Members() {
         >
           <Ionicons name="add" size={26} color="#fff" />
         </TouchableOpacity>
-
       </View>
     </SafeAreaView>
   );
@@ -365,7 +378,7 @@ export default function Members() {
 /* ================== STYLES ================== */
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#f3f4f6",paddingTop: -50 },
+  safe: { flex: 1, backgroundColor: "#f3f4f6", paddingTop: -50 },
   container: { flex: 1, paddingHorizontal: 16 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
 
@@ -514,12 +527,3 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
 });
-
-
-
-
-
-
-
-
-
