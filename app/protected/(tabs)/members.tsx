@@ -6,8 +6,6 @@ import {
   deleteDoc,
   doc,
   onSnapshot,
-  orderBy,
-  query,
   updateDoc,
 } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
@@ -15,6 +13,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Image,
   Linking,
   Modal,
   StyleSheet,
@@ -23,6 +22,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -56,7 +56,7 @@ export default function Members() {
       // 🔥 SORT BY createdAt LOCALLY
       list.sort((a, b) => {
         if (!a.createdAt || !b.createdAt) return 0;
-        console.log(a.createdAt+" lll")
+        console.log(a.createdAt + " lll");
         return a.createdAt.seconds - b.createdAt.seconds; // old first, new last
       });
 
@@ -75,7 +75,7 @@ export default function Members() {
       list = list.filter(
         (m) =>
           m.name?.toLowerCase().includes(search.toLowerCase()) ||
-          m.phone?.includes(search)
+          m.phone?.includes(search),
       );
     }
     setFiltered(list);
@@ -92,7 +92,7 @@ export default function Members() {
     const today = new Date();
     const due = new Date(member.nextDueDate.seconds * 1000);
     const diffDays = Math.floor(
-      (due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+      (due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
     );
 
     if (diffDays < 0) return "OVERDUE";
@@ -116,6 +116,16 @@ export default function Members() {
     setPaymentMethod(method);
     setAmount(member.membershipFee?.toString() || "");
     setPaymentModal(true);
+  };
+
+  const getInitials = (name: string) => {
+    if (!name) return "";
+
+    const parts = name.trim().split(" ");
+    const first = parts[0]?.charAt(0) || "";
+    const second = parts[1]?.charAt(0) || "";
+
+    return (first + second).toUpperCase();
   };
 
   const processPayment = async () => {
@@ -205,9 +215,24 @@ export default function Members() {
             return (
               <View style={styles.card}>
                 <View style={styles.cardHeader}>
-                  <View>
-                    <Text style={styles.name}>{item.name}</Text>
-                    <Text style={styles.phone}>📞 {item.phone}</Text>
+                  <View style={styles.memberRow}>
+                    {item.profileImage ? (
+                      <Image
+                        source={{ uri: item.profileImage }}
+                        style={styles.dp}
+                      />
+                    ) : (
+                      <View style={styles.initialAvatar}>
+                        <Text style={styles.initialText}>
+                          {getInitials(item.name)}
+                        </Text>
+                      </View>
+                    )}
+
+                    <View style={{ marginLeft: 10 }}>
+                      <Text style={styles.name}>{item.name}</Text>
+                      <Text style={styles.phone}>📞 {item.phone}</Text>
+                    </View>
                   </View>
 
                   <View style={styles.iconRow}>
@@ -244,8 +269,8 @@ export default function Members() {
                     billing === "OVERDUE"
                       ? styles.badgeRed
                       : billing === "DUE SOON"
-                      ? styles.badgeOrange
-                      : styles.badgeGreen,
+                        ? styles.badgeOrange
+                        : styles.badgeGreen,
                   ]}
                 >
                   <Text style={styles.badgeText}>{billing}</Text>
@@ -525,5 +550,30 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     elevation: 8,
+  },
+  memberRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  dp: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#e5e7eb",
+  },
+  initialAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#2563eb",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  initialText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 16,
   },
 });

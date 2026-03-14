@@ -1,10 +1,13 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Picker } from "@react-native-picker/picker";
+import * as ImageManipulator from "expo-image-manipulator";
+import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import { addDoc, collection, getDocs, query, where } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -20,12 +23,13 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { db } from "../../firebaseConfig";
-import { push, replace } from "expo-router/build/global-state/routing";
 
 export default function AddMember() {
   const insets = useSafeAreaInsets();
 
   const [memberType, setMemberType] = useState<"new" | "existing">("new");
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -94,7 +98,7 @@ export default function AddMember() {
 
     if (missing.length > 0) {
       setError(
-        `${missing.join(", ")} ${missing.length > 1 ? "are" : "is"} mandatory`
+        `${missing.join(", ")} ${missing.length > 1 ? "are" : "is"} mandatory`,
       );
       return false;
     }
@@ -102,7 +106,47 @@ export default function AddMember() {
     return true;
   };
 
+  const pickImage = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      Alert.alert("Permission required", "Allow access to photos");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      const compressed = await ImageManipulator.manipulateAsync(
+        result.assets[0].uri,
+        [{ resize: { width: 200 } }], // avatar size
+        {
+          compress: 0.4,
+          format: ImageManipulator.SaveFormat.JPEG,
+          base64: true,
+        },
+      );
+
+      const base64Image = `data:image/jpeg;base64,${compressed.base64}`;
+
+      setProfileImage(base64Image);
+    }
+  };
   const addMember = async () => {
+    if (saving) return; // prevent double click
+
+    setSaving(true);
+    setError("");
+
+    if (!validateFields()) {
+      setSaving(false);
+      return;
+    }
     setError("");
     if (!validateFields()) return;
 
@@ -110,11 +154,14 @@ export default function AddMember() {
       if (memberType === "new") {
         const phoneQuery = query(
           collection(db, "members"),
-          where("phone", "==", phone)
+          where("phone", "==", phone),
         );
+
         const phoneSnapshot = await getDocs(phoneQuery);
+
         if (!phoneSnapshot.empty) {
           setError("Member with this phone number already exists");
+          setSaving(false);
           return;
         }
       }
@@ -134,6 +181,7 @@ export default function AddMember() {
         dob: dob ?? null,
         age: calculateAge(dob),
         idType,
+        profileImage,
         idNumber,
         registrationDate: memberType === "new" ? registrationDate : null,
         lastPaidDate: memberType === "new" ? registrationDate : null,
@@ -215,6 +263,16 @@ export default function AddMember() {
               </TouchableOpacity>
             ))}
           </View>
+
+          <Text style={styles.label}>Profile Picture</Text>
+
+          <TouchableOpacity style={styles.dpContainer} onPress={pickImage}>
+            {profileImage ? (
+              <Image source={{ uri: profileImage }} style={styles.dpImage} />
+            ) : (
+              <Text style={styles.dpText}>Upload Photo</Text>
+            )}
+          </TouchableOpacity>
 
           <Input label="Full Name *" value={name} setValue={setName} />
           <Input
@@ -382,8 +440,14 @@ export default function AddMember() {
 
           {error !== "" && <Text style={styles.error}>{error}</Text>}
 
-          <TouchableOpacity style={styles.button} onPress={addMember}>
-            <Text style={styles.buttonText}>Add Member</Text>
+          <TouchableOpacity
+            style={[styles.button, saving && { opacity: 0.6 }]}
+            onPress={addMember}
+            disabled={saving}
+          >
+            <Text style={styles.buttonText}>
+              {saving ? "Adding..." : "Add Member"}
+            </Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -490,5 +554,27 @@ const styles = StyleSheet.create({
   ageText: {
     color: "#2563eb",
     fontWeight: "600",
+  },
+  dpContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    alignSelf: "center",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
+    overflow: "hidden",
+  },
+
+  dpImage: {
+    width: "100%",
+    height: "100%",
+  },
+
+  dpText: {
+    color: "#6b7280",
+    fontSize: 12,
   },
 });

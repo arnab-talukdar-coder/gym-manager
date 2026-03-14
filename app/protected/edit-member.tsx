@@ -1,11 +1,14 @@
+import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Picker } from "@react-native-picker/picker";
-import { Ionicons } from "@expo/vector-icons";
+import * as ImageManipulator from "expo-image-manipulator";
+import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,6 +16,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
 import { SafeAreaView } from "react-native-safe-area-context";
 import { db } from "../../firebaseConfig";
 
@@ -21,6 +25,7 @@ export default function EditMember() {
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [profileImage, setProfileImage] = useState<string | null>(null);
   const [idType, setIdType] = useState("");
   const [idNumber, setIdNumber] = useState("");
 
@@ -44,6 +49,7 @@ export default function EditMember() {
         setPhone(data.phone || "");
         setIdType(data.idType || "");
         setIdNumber(data.idNumber || "");
+        setProfileImage(data.profileImage || null);
 
         if (data.dob?.seconds) {
           setDob(new Date(data.dob.seconds * 1000));
@@ -76,6 +82,37 @@ export default function EditMember() {
     return age;
   };
 
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      const compressed = await ImageManipulator.manipulateAsync(
+        result.assets[0].uri,
+        [{ resize: { width: 200 } }], // avatar size
+        {
+          compress: 0.4,
+          format: ImageManipulator.SaveFormat.JPEG,
+          base64: true,
+        },
+      );
+
+      const base64Image = `data:image/jpeg;base64,${compressed.base64}`;
+
+      setProfileImage(base64Image);
+    }
+  };
+  const getInitials = (name: string) => {
+    const parts = name.trim().split(" ");
+    const first = parts[0]?.charAt(0) || "";
+    const second = parts[1]?.charAt(0) || "";
+    return (first + second).toUpperCase();
+  };
+
   const formatDate = (date: Date) => {
     const d = date.getDate().toString().padStart(2, "0");
     const m = (date.getMonth() + 1).toString().padStart(2, "0");
@@ -106,6 +143,7 @@ export default function EditMember() {
         age: calculateAge(dob),
         registrationDate: registrationDate ?? null,
         nextDueDate: nextDueDate ?? null,
+        profileImage,
       });
 
       Alert.alert("Updated Successfully");
@@ -123,7 +161,6 @@ export default function EditMember() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container}>
-
         {/* 🔥 HEADER WITH BACK BUTTON */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
@@ -134,6 +171,15 @@ export default function EditMember() {
 
           <View style={{ width: 24 }} />
         </View>
+        <TouchableOpacity style={styles.avatarContainer} onPress={pickImage}>
+          {profileImage ? (
+            <Image source={{ uri: profileImage }} style={styles.avatar} />
+          ) : (
+            <View style={styles.initialAvatar}>
+              <Text style={styles.initialText}>{getInitials(name)}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
 
         {/* NAME */}
         <Text style={styles.label}>Name *</Text>
@@ -339,5 +385,29 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "600",
   },
-});
+  avatarContainer: {
+    alignSelf: "center",
+    marginBottom: 20,
+  },
 
+  avatar: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+  },
+
+  initialAvatar: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: "#2563eb",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  initialText: {
+    color: "#fff",
+    fontSize: 28,
+    fontWeight: "700",
+  },
+});
